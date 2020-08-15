@@ -108,6 +108,7 @@ app.get("/messages", async (req, res) => {
       offset: 10,
       limit: 10,
     });
+
     res.json({ message });
   } catch (error) {
     console.error(error);
@@ -157,3 +158,19 @@ app.get("/minerpowers", async (req, res) => {
 app.listen(port, () =>
   console.log(`Slate stats api listening on port ${port}!`)
 );
+
+app.get("/averageBlockTime", async (req, res) => {
+  // const blockId = req.params.cid;
+  // console.log(blockId);
+  try {
+    const sum = await Block.sum("timestamp");
+    console.log(sum);
+    const total = await Block.count();
+    console.log(total);
+
+    const average = sum / total;
+    res.json({ average });
+  } catch (error) {
+    console.error(error);
+  }
+});
