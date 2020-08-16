@@ -1,14 +1,28 @@
 const express = require("express");
 const Sequelize = require("sequelize");
 const app = express();
-const port = 3000;
+const port = 8080;
 const dotenv = require("dotenv").config();
 
 app.use(express.json());
 
-//note: colin -- postgresdb string should be formatted as POSTGRESDB=postgres://127.0.0.1/postgres
+const POSTGRESHOST = process.env.POSTGRESHOST || undefined;
 const POSTGRESDB = process.env.POSTGRESDB || undefined;
-const sequelize = new Sequelize(POSTGRESDB);
+const POSTGRESUSERNAME = process.env.POSTGRESUSERNAME || undefined;
+const POSTGRESPASSWORD = process.env.POSTGRESPASSWORD || undefined;
+
+const sequelize = new Sequelize(
+  POSTGRESDB,
+  POSTGRESUSERNAME,
+  POSTGRESPASSWORD,
+  {
+    host: POSTGRESHOST,
+    dialect: "postgres",
+    dialectOptions: {
+      encrypt: true,
+    },
+  }
+);
 sequelize
   .authenticate()
   .then(() => {
@@ -17,6 +31,7 @@ sequelize
   .catch((err) => {
     console.error("Unable to connect to the database:", err);
   });
+
 const Block = sequelize.define(
   "blocks",
   {
@@ -39,22 +54,23 @@ const Block = sequelize.define(
     timestamp: {
       type: Sequelize.NUMBER,
     },
+    ticket: {
+      type: Sequelize.STRING,
+    },
+    election_proof: {
+      type: Sequelize.STRING,
+    },
   },
   {
     // options
   }
 );
-// Note: using `force: true` will drop the table if it already exists
+
 Block.sync({ force: false });
 app.get("/", (req, res) => res.json({ message: "Slate Stats API" }));
-app.get("/block/:cid", async (req, res) => {
-  const blockId = req.params.cid;
-  console.log(blockId);
+app.get("/blocks", async (req, res) => {
   try {
     const block = await Block.findAll({
-      where: {
-        cid: blockId,
-      },
       attributes: [
         "cid",
         "parentweight",
@@ -63,6 +79,8 @@ app.get("/block/:cid", async (req, res) => {
         "height",
         "miner",
         "timestamp",
+        "ticket",
+        "election_proof",
       ],
     });
     res.json({ block });
@@ -105,8 +123,8 @@ app.get("/messages", async (req, res) => {
   try {
     const message = await Message.findAll({
       attributes: ["cid", "from", "to", "nonce", "gasprice", "gaslimit"],
-      offset: 10,
-      limit: 10,
+      offset: 1000,
+      limit: 1000,
     });
 
     res.json({ message });
@@ -117,7 +135,7 @@ app.get("/messages", async (req, res) => {
 
 // MINER POWER
 const MinerPower = sequelize.define(
-  "miner_powers",
+  "miner_power",
   {
     miner_id: {
       type: Sequelize.STRING,
@@ -141,7 +159,7 @@ app.get("/minerpowers", async (req, res) => {
   // const blockId = req.params.cid;
   // console.log(blockId);
   try {
-    const minerpower = await MinerPower.findAll({
+    const minerpowers = await MinerPower.findAll({
       attributes: [
         "miner_id",
         "state_root",
@@ -149,7 +167,7 @@ app.get("/minerpowers", async (req, res) => {
         "quality_adjusted_power",
       ],
     });
-    res.json({ minerpower });
+    res.json({ minerpowers });
   } catch (error) {
     console.error(error);
   }
@@ -170,6 +188,107 @@ app.get("/averageBlockTime", async (req, res) => {
 
     const average = sum / total;
     res.json({ average });
+  } catch (error) {
+    console.error(error);
+  }
+});
+
+// RECEIPTS
+const Receipts = sequelize.define("receipts", {
+  msg: {
+    type: Sequelize.STRING,
+    allowNull: false,
+  },
+  state: {
+    type: Sequelize.STRING,
+  },
+  idx: {
+    type: Sequelize.NUMBER,
+  },
+  exit: {
+    type: Sequelize.NUMBER,
+  },
+  gas_used: {
+    type: Sequelize.STRING,
+  },
+});
+
+app.get("/receipts", async (req, res) => {
+  // const blockId = req.params.cid;
+  // console.log(blockId);
+  try {
+    const receipts = await Receipts.findAll({
+      attributes: ["msg", "state", "idx", "exit", "gas_used"],
+    });
+    res.json({ receipts });
+  } catch (error) {
+    console.error(error);
+  }
+});
+
+// BLOCK MESSAGES
+
+const BlockMessage = sequelize.define("block_message", {
+  block: {
+    type: Sequelize.STRING,
+  },
+  message: {
+    type: Sequelize.STRING,
+  },
+});
+
+app.get("/blockMessages", async (req, res) => {
+  // const blockId = req.params.cid;
+  // console.log(blockId);
+  try {
+    const blockMessages = await BlockMessage.findAll({
+      attributes: ["block", "message"],
+    });
+    res.json({ blockMessages });
+  } catch (error) {
+    console.error(error);
+  }
+});
+
+// BLOCK REWARDS
+
+const BlockReward = sequelize.define("block_reward", {
+  state_root: {
+    type: Sequelize.STRING,
+  },
+  base_block_reward: {
+    type: Sequelize.NUMBER,
+  },
+});
+
+app.get("/blockRewards", async (req, res) => {
+  try {
+    const blockRewards = await BlockReward.findAll({
+      attributes: ["state_root", "base_block_reward"],
+    });
+    res.json({ blockRewards });
+  } catch (error) {
+    console.error(error);
+  }
+});
+
+// BLOCK PARENTS
+
+const BlockParent = sequelize.define("block_parent", {
+  block: {
+    type: Sequelize.STRING,
+  },
+  parent: {
+    type: Sequelize.STRING,
+  },
+});
+
+app.get("/blockParents", async (req, res) => {
+  try {
+    const blockParents = await BlockParent.findAll({
+      attributes: ["block", "parent"],
+    });
+    res.json({ blockParents });
   } catch (error) {
     console.error(error);
   }
