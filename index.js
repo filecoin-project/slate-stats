@@ -82,6 +82,7 @@ app.get("/blocks", async (req, res) => {
         "ticket",
         "election_proof",
       ],
+      limit: 100,
     });
     res.json({ block });
   } catch (error) {
@@ -123,8 +124,8 @@ app.get("/messages", async (req, res) => {
   try {
     const message = await Message.findAll({
       attributes: ["cid", "from", "to", "nonce", "gasprice", "gaslimit"],
-      offset: 1000,
-      limit: 1000,
+      offset: 100,
+      limit: 100,
     });
 
     res.json({ message });
@@ -134,64 +135,64 @@ app.get("/messages", async (req, res) => {
 });
 
 // MINER POWER
-const MinerPower = sequelize.define(
-  "miner_power",
-  {
-    miner_id: {
-      type: Sequelize.STRING,
-      allowNull: false,
-    },
-    state_root: {
-      type: Sequelize.STRING,
-    },
-    raw_bytes_power: {
-      type: Sequelize.NUMBER,
-    },
-    quality_adjusted_power: {
-      type: Sequelize.NUMBER,
-    },
-  },
-  {
-    // options
-  }
-);
-app.get("/minerpowers", async (req, res) => {
-  // const blockId = req.params.cid;
-  // console.log(blockId);
-  try {
-    const minerpowers = await MinerPower.findAll({
-      attributes: [
-        "miner_id",
-        "state_root",
-        "raw_bytes_power",
-        "quality_adjusted_power",
-      ],
-    });
-    res.json({ minerpowers });
-  } catch (error) {
-    console.error(error);
-  }
-});
+// const MinerPower = sequelize.define(
+//   "miner_power",
+//   {
+//     miner_id: {
+//       type: Sequelize.STRING,
+//       allowNull: false,
+//     },
+//     state_root: {
+//       type: Sequelize.STRING,
+//     },
+//     raw_bytes_power: {
+//       type: Sequelize.NUMBER,
+//     },
+//     quality_adjusted_power: {
+//       type: Sequelize.NUMBER,
+//     },
+//   },
+//   {
+//     // options
+//   }
+// );
+// app.get("/minerpowers", async (req, res) => {
+//   // const blockId = req.params.cid;
+//   // console.log(blockId);
+//   try {
+//     const minerpowers = await MinerPower.findAll({
+//       attributes: [
+//         "miner_id",
+//         "state_root",
+//         "raw_bytes_power",
+//         "quality_adjusted_power",
+//       ],
+//     });
+//     res.json({ minerpowers });
+//   } catch (error) {
+//     console.error(error);
+//   }
+// });
 
 app.listen(port, () =>
   console.log(`Slate stats api listening on port ${port}!`)
 );
 
-app.get("/averageBlockTime", async (req, res) => {
-  // const blockId = req.params.cid;
-  // console.log(blockId);
-  try {
-    const sum = await Block.sum("timestamp");
-    console.log(sum);
-    const total = await Block.count();
-    console.log(total);
+// app.get("/averageBlockTime", async (req, res) => {
+//   // const blockId = req.params.cid;
+//   // console.log(blockId);
+//   try {
+//     const sum = await Block.sum("timestamp");
+//     console.log(sum);
+//     const total = await Block.count();
+//     console.log(total);
 
-    const average = sum / total;
-    res.json({ average });
-  } catch (error) {
-    console.error(error);
-  }
-});
+//     const average = sum / total;
+//     res.json({ average });
+//   } catch (error) {
+//     console.error(error);
+//   }
+// });
 
 // RECEIPTS
 const Receipts = sequelize.define("receipts", {
@@ -219,6 +220,7 @@ app.get("/receipts", async (req, res) => {
   try {
     const receipts = await Receipts.findAll({
       attributes: ["msg", "state", "idx", "exit", "gas_used"],
+      limit: 100,
     });
     res.json({ receipts });
   } catch (error) {
@@ -243,6 +245,7 @@ app.get("/blockMessages", async (req, res) => {
   try {
     const blockMessages = await BlockMessage.findAll({
       attributes: ["block", "message"],
+      limit: 100,
     });
     res.json({ blockMessages });
   } catch (error) {
@@ -265,6 +268,7 @@ app.get("/blockRewards", async (req, res) => {
   try {
     const blockRewards = await BlockReward.findAll({
       attributes: ["state_root", "base_block_reward"],
+      limit: 100,
     });
     res.json({ blockRewards });
   } catch (error) {
@@ -287,6 +291,7 @@ app.get("/blockParents", async (req, res) => {
   try {
     const blockParents = await BlockParent.findAll({
       attributes: ["block", "parent"],
+      limit: 100,
     });
     res.json({ blockParents });
   } catch (error) {
